@@ -1,0 +1,249 @@
+// Main theme stylesheet.
+// ArdentOps WordPress Theme, (C) 2026 ArdentOps
+//
+// Normalizing styles have been helped along thanks to the fine work of
+// Nicolas Gallagher and Jonathan Neal https://necolas.github.io/normalize.css/
+
+// ── Variables ─────────────────────────────────────────────────────
+
+$color-text: #333;
+$color-link: #0073aa;
+$color-link-hover: #00a0d2;
+$color-bg: #f8f9fa;
+$color-surface: #fff;
+$color-border: #e5e5e5;
+$color-muted: #666;
+
+$font-family-base:
+  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+  'Helvetica Neue', sans-serif;
+
+$content-max-width: 1200px;
+$line-height-base: 1.6;
+
+// ── Reset & Base ──────────────────────────────────────────────────
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: $font-family-base;
+  line-height: $line-height-base;
+  color: $color-text;
+  background-color: $color-bg;
+}
+
+// ── Typography ────────────────────────────────────────────────────
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+p {
+  margin-bottom: 1em;
+}
+
+a {
+  color: $color-link;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-link-hover;
+    text-decoration: underline;
+  }
+}
+
+// ── Layout ────────────────────────────────────────────────────────
+
+.site-header,
+.site-footer {
+  padding: 1rem 0;
+  background-color: $color-surface;
+  border-bottom: 1px solid $color-border;
+}
+
+.site-main {
+  max-width: $content-max-width;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.content-area {
+  float: left;
+  width: 66.666%;
+}
+
+.widget-area {
+  float: right;
+  width: 33.333%;
+  padding-left: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content-area,
+  .widget-area {
+    float: none;
+    width: 100%;
+    padding: 0;
+  }
+}
+
+// ── Posts & Pages ─────────────────────────────────────────────────
+
+.entry-header {
+  margin-bottom: 1.5rem;
+}
+
+.entry-title {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.entry-meta {
+  font-size: 0.875rem;
+  color: $color-muted;
+}
+
+.entry-content {
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+.entry-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid $color-border;
+  font-size: 0.875rem;
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+
+.main-navigation {
+  clear: both;
+  display: block;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+
+    li {
+      display: inline-block;
+      position: relative;
+
+      a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: $color-text;
+
+        &:hover {
+          color: $color-link;
+        }
+      }
+    }
+
+    ul {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: $color-surface;
+      border: 1px solid $color-border;
+      z-index: 999;
+    }
+
+    li:hover > ul {
+      display: block;
+    }
+  }
+}
+
+.post-navigation {
+  margin: 2rem 0;
+  overflow: hidden;
+}
+
+.nav-previous {
+  float: left;
+}
+
+.nav-next {
+  float: right;
+}
+
+// ── Comments ──────────────────────────────────────────────────────
+
+.comments-area {
+  margin-top: 3rem;
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+}
+
+.comment {
+  padding: 1rem 0;
+  border-bottom: 1px solid $color-border;
+}
+
+// ── Accessibility ─────────────────────────────────────────────────
+
+.screen-reader-text {
+  border: 0;
+  clip: rect(1px, 1px, 1px, 1px);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  word-wrap: normal !important;
+}
+
+// ── WordPress Core ────────────────────────────────────────────────
+
+.aligncenter {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wp-caption {
+  max-width: 100%;
+  margin-bottom: 1em;
+}
+
+.gallery {
+  margin-bottom: 1.5em;
+}
+
+// ── Clearfix ──────────────────────────────────────────────────────
+
+.clearfix,
+.entry-content {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}

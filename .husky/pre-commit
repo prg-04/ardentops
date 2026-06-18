@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+PROJECT_TYPE=$(cat .project-type 2>/dev/null || echo "webapp")
+
+echo "→ Scanning for secrets..."
+npx secretlint "**/*"
+
+echo "→ Checking formatting..."
+npx prettier --check .
+
+if [ "$PROJECT_TYPE" = "wordpress" ]; then
+  if [ -f "vendor/bin/phpcs" ]; then
+    echo "→ Running PHP CodeSniffer (WordPress standards)..."
+    ./vendor/bin/phpcs --standard=WordPress --extensions=php \
+      web/wp-content/themes/ \
+      web/wp-content/plugins/ \
+      --ignore=*/vendor/*,*/node_modules/*
+  else
+    echo "⚠  phpcs not found — run: composer install"
+    exit 1
+  fi
+fi
+
+if [ "$PROJECT_TYPE" = "webapp" ]; then
+  if [ -f "node_modules/.bin/eslint" ]; then
+    echo "→ Running ESLint..."
+    npx eslint . --ext .js,.ts,.jsx,.tsx --max-warnings 0
+  fi
+fi

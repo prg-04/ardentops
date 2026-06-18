@@ -1,0 +1,36 @@
+name: Weekly Security Scan
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  snyk-weekly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Snyk — npm dependency scan
+        uses: snyk/actions/node@8e119fbb6c251787721d34ba683ed48eba792766
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --all-projects
+
+      - name: Snyk — PHP/Composer scan (WordPress projects only)
+        if: ${{ hashFiles('composer.lock') != '' }}
+        uses: snyk/actions/php@8e119fbb6c251787721d34ba683ed48eba792766
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium

@@ -1,0 +1,66 @@
+# ── Dependencies ────────────────────────────────────────────────
+node_modules/
+vendor/
+
+# ── Environment & Secrets ───────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# Keep .env.example — it's safe to commit (no real values)
+!.env.example
+
+# ── WordPress (Bedrock) ─────────────────────────────────────────
+web/wp/                  # WordPress core — installed by Composer, not committed
+web/wp-content/uploads/  # User uploads — managed outside Git
+web/wp-content/cache/    # Cache files
+
+# ── Build Artifacts ─────────────────────────────────────────────
+dist/
+build/
+*.min.js
+*.min.css
+assets/css/*.css          # SCSS build output — compile from assets/css/*.scss
+!assets/css/*.scss        # Keep SCSS source files
+
+# ── Test Output ─────────────────────────────────────────────────
+coverage/
+coverage-html/
+coverage.xml
+playwright-report/
+test-results/
+.nyc_output/
+
+# ── Logs ────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS ──────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# ── IDE ─────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+# Keep .vscode/extensions.json — recommended extensions are useful to share
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.suo
+*.user
+
+# ── Lando ───────────────────────────────────────────────────────
+.lando.local.yml     # Local overrides — never committed
+
+# ── Doppler ─────────────────────────────────────────────────────
+.doppler/
+
+# ── Misc ────────────────────────────────────────────────────────
+*.bak
+*.tmp
+.cache/

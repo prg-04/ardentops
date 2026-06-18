@@ -1,0 +1,28 @@
+# ArdentOps CODEOWNERS
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# SETUP: Before this file works, create these GitHub Teams under ArdentOps org:
+#   - ArdentOps/seniors        → all senior engineers
+#   - ArdentOps/cto            → CTO / lead only
+#   - ArdentOps/wordpress-lead → designated WordPress engineer per project
+#
+# Replace placeholder team names with actual GitHub usernames if teams aren't
+# configured yet: @username instead of @ArdentOps/team-name
+
+# ── Default: all changes require senior review ─────────────────
+*                             @ArdentOps/seniors
+
+# ── WordPress content: WordPress lead ──────────────────────────
+/web/wp-content/themes/       @ArdentOps/wordpress-lead
+/web/wp-content/plugins/      @ArdentOps/wordpress-lead
+
+# ── Infrastructure: CTO only ───────────────────────────────────
+/.lando.yml                   @ArdentOps/cto
+/Dockerfile                   @ArdentOps/cto
+/.github/                     @ArdentOps/cto
+/scripts/                     @ArdentOps/cto
+/composer.json                @ArdentOps/seniors @ArdentOps/cto
+/package.json                 @ArdentOps/seniors @ArdentOps/cto
+
+# ── Docs: any senior can approve ───────────────────────────────
+/docs/                        @ArdentOps/seniors

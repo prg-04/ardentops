@@ -1,0 +1,37 @@
+{
+  "recommendations": [
+    // ── Core tooling ─────────────────────────────────────────
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bmewburn.vscode-intelephense-client",
+
+    // ── WordPress ────────────────────────────────────────────
+    "wordpresstoolbox.wordpress-toolbox",
+
+    // ── AI coding agent ──────────────────────────────────────
+    "continue.continue",
+
+    // ── Git & GitHub ─────────────────────────────────────────
+    "github.vscode-github-actions",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // ── Testing ──────────────────────────────────────────────
+    "ms-playwright.playwright",
+    "vitest.explorer",
+
+    // ── Secrets & env ────────────────────────────────────────
+    "mikestead.dotenv",
+
+    // ── Docker / Lando ───────────────────────────────────────
+    "ms-azuretools.vscode-docker",
+
+    // ── Linting & formatting ─────────────────────────────────
+    "streetsidesoftware.code-spell-checker",
+    "editorconfig.editorconfig",
+
+    // ── Utilities ────────────────────────────────────────────
+    "yzhang.markdown-all-in-one",
+    "redhat.vscode-yaml"
+  ]
+}

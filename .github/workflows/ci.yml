@@ -1,0 +1,296 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+# Cancel in-progress runs on the same branch — saves Actions minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Step 0: Detect project type from .project-stack or .project-type ──
+  # Composable adapters: .project-stack holds an array; .project-type is kept for
+  # backward compat. Category is a newline-separated list (e.g., "php\njs").
+  detect-type:
+    runs-on: ubuntu-latest
+    outputs:
+      type: ${{ steps.read.outputs.type }}
+      category: ${{ steps.read.outputs.category }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          # Read from .project-stack first, fall back to .project-type
+          if [ -f .project-stack ]; then
+            python3 -c "
+              import json, sys
+              with open('.project-stack') as f:
+                  stack = json.load(f)
+              adapters = stack.get('adapters', [])
+              types = ','.join(adapters) if adapters else 'generic'
+              categories = []
+              for a in adapters:
+                  if a.startswith('wordpress') or a == 'laravel':
+                      categories.append('php')
+                  elif a in ('nextjs','nuxtjs','node-api','nestjs','angular','shopify-hydrogen','static','shopify-liquid','aws-lambda'):
+                      categories.append('js')
+                  else:
+                      categories.append('other')
+              cats = '\n'.join(sorted(set(categories))) if categories else 'other'
+              print(f'type={types}')
+              print(f'category={cats}')
+            " >> $GITHUB_OUTPUT
+          else
+            TYPE=$(cat .project-type 2>/dev/null | tr -d '[:space:]' || echo 'node-api')
+            echo "type=$TYPE" >> $GITHUB_OUTPUT
+            case "$TYPE" in
+              wordpress-*|laravel) echo "category=php" >> $GITHUB_OUTPUT;;
+              nextjs|nuxtjs|node-api|nestjs|angular|shopify-hydrogen) echo "category=js" >> $GITHUB_OUTPUT;;
+              *) echo "category=other" >> $GITHUB_OUTPUT;;
+            esac
+          fi
+          echo "Detected: type=$(grep '^type=' $GITHUB_OUTPUT | cut -d= -f2- | tr '\n' ' '), category=$(grep '^category=' $GITHUB_OUTPUT | cut -d= -f2-)"
+
+  # ── Step 1: Lint, format, secrets scan (always runs) ──────────
+  lint-and-format:
+    runs-on: ubuntu-latest
+    needs: detect-type
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Check formatting (Prettier)
+        run: npm run format:check
+
+      - name: Scan for secrets (Secretlint)
+        run: npm run lint:secrets
+
+  # ── Step 2a: PHP tests — WordPress projects only ───────────────
+  php-tests:
+    runs-on: ubuntu-latest
+    needs: [detect-type, lint-and-format]
+    if: contains(needs.detect-type.outputs.category, 'php')
+    # Path filter: only run when PHP or composer files change
+    # Note: configure paths here after first project setup
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version-file: .php-version
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Determine PHPCS standard from project type
+        id: phpcs-config
+        run: |
+          PT=$(cat .project-type 2>/dev/null | tr -d '[:space:]')
+          if echo "$PT" | grep -q '^wordpress'; then
+            echo "standard=WordPress" >> $GITHUB_OUTPUT
+            echo "paths=web/wp-content/themes/ web/wp-content/plugins/" >> $GITHUB_OUTPUT
+          else
+            echo "standard=PSR12" >> $GITHUB_OUTPUT
+            echo "paths=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run PHP CodeSniffer
+        run: |
+          ./vendor/bin/phpcs \
+            --standard=${{ steps.phpcs-config.outputs.standard }} \
+            --extensions=php \
+            --ignore=*/vendor/*,*/node_modules/* \
+            ${{ steps.phpcs-config.outputs.paths }}
+
+      - name: Run PHPUnit
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: php-coverage
+          path: coverage.xml
+          retention-days: 7
+
+  # ── Step 2b: JS/TS tests — nextjs and node-api projects ────────
+  js-tests:
+    runs-on: ubuntu-latest
+    needs: [detect-type, lint-and-format]
+    if: contains(needs.detect-type.outputs.category, 'js')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      - name: Run JS tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: js-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ── Step 2c: next build — nextjs projects only ───────────────
+  # This is a REQUIRED check for Next.js. A project can pass type-check
+  # and unit tests but still fail next build due to RSC/bundler constraints.
+  # Catching this in CI prevents broken production deploys.
+  next-build:
+    runs-on: ubuntu-latest
+    needs: [detect-type, lint-and-format]
+    if: needs.detect-type.outputs.type == 'nextjs'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts','**/*.tsx') }}
+          restore-keys: nextjs-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: next build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+  # ── Step 3: E2E tests — merge to main/develop only ────────────
+  # Skipped on PR push to save Actions quota.
+  # Run against staging URL after deploy.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [lint-and-format]
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+
+      - name: Upload Playwright report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ── Step 4: Lighthouse CI — merge only, after E2E ─────────────
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: [e2e]
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # ── Step 5: Snyk — MERGE to main/develop only (quota: ~2/repo/week) ──
+  snyk:
+    runs-on: ubuntu-latest
+    needs: [lint-and-format]
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run Snyk vulnerability scan
+        uses: snyk/actions/node@8e119fbb6c251787721d34ba683ed48eba792766
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+# ── Weekly scheduled Snyk scan (supplements merge-only scans) ──

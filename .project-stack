@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "templateVersion": "4.1.7",
+  "adapters": [
+    {
+      "id": "wordpress-classic",
+      "label": "WordPress — Classic (Shared Hosting / cPanel)"
+    }
+  ],
+  "primary": "wordpress-classic"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "ardentops",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WordPress theme: ArdentOps",
+  "scripts": {
+    "build:css": "sass assets/css/main.scss assets/css/main.css --style=compressed --no-source-map",
+    "watch:css": "sass assets/css/main.scss assets/css/main.css --watch --style=expanded",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "sass": "^1.77.0"
+  }
+}
