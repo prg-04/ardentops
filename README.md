@@ -1,137 +1,98 @@
-# @ardentops/cli
+# ArdentOps WordPress Theme
 
-> Project scaffolding CLI for the **Unified Agency Engineering Framework (UAEF)**.
-> Bootstraps new projects and retrofits existing repos with machine-enforced quality
-> gates, stack-specific CI, AI agent behavioral contracts, and Doppler secrets management.
+Custom **WordPress Classic** theme generated and maintained under the ArdentOps Unified Agency Engineering Framework (UAEF).
 
----
+> This repository contains the **generated WordPress theme project**, not the `@ardentops/cli` source package. The active stack is recorded in [`.project-stack`](./.project-stack).
 
-## What this is
+## What this project is
 
-`@ardentops/cli` is a **project compiler and engineering standards installer**.
-One command composes a clean project tree from stack-specific templates and applies
-a three-tier enforcement stack:
+ArdentOps is a traditional PHP WordPress theme for shared hosting / cPanel environments.
 
-- **Tier 1 — Universal (always on):** Branch protection, Secretlint, Husky, commitlint,
-  Doppler environment distribution, AI agent token policy, ADR structure.
-- **Tier 2 — Stack adapter:** Stack-specific source scaffolding (WordPress theme files,
-  Next.js pages, etc.), Lando config, stack CI jobs, deploy workflows, `.env.example`,
-  and AI agent rules scoped to the detected stack.
-- **Tier 3 — Generic fallback:** When the stack is unrecognised, Tier 1 still applies
-  and an `ADAPTER-NEEDED.md` is created to guide the next step.
+It includes:
 
-Unlike traditional template clones that ship every adapter's artifacts to every project,
-the ArdentOps project compiler (`scripts/generate.js`) reads only the requested adapter's
-template files — producing ~40 focused files instead of ~145 framework internals.
+- WordPress theme setup and lifecycle hooks
+- Responsive navigation and theme assets
+- Template files for posts, pages, search, archives, comments, and 404 responses
+- Sass-based frontend styles compiled to the theme's CSS asset
+- JavaScript behavior in `assets/js/main.js`
+- Theme helpers under `inc/`
+- PHPUnit and Playwright test scaffolding
+- GitHub Actions checks for formatting, secrets, PHP standards, tests, E2E, Lighthouse, and dependency scanning
 
----
+## Theme structure
 
-## Install
-
-```bash
-npm install -g @ardentops/cli
+```text
+.
+├── assets/
+│   ├── css/          Sass source and compiled CSS
+│   └── js/           Frontend JavaScript
+├── inc/              Shared PHP helpers
+├── template-parts/   Reusable WordPress template fragments
+├── tests/
+│   ├── unit/php/     PHPUnit tests
+│   └── e2e/          Playwright tests
+├── docs/             Project and operational documentation
+├── functions.php     Theme setup, hooks, assets, widgets
+├── header.php
+├── footer.php
+├── index.php
+├── page.php
+├── single.php
+├── archive.php
+├── search.php
+├── comments.php
+├── searchform.php
+├── sidebar.php
+└── 404.php
 ```
 
-Or run without installing:
+## Development
 
-```bash
-npx @ardentops/cli new-project
+The repository is a traditional WordPress theme rather than a Bedrock installation.
+
+Before changing the project, read:
+
+1. [AGENT-RULES.md](./AGENT-RULES.md)
+2. [CLAUDE.md](./CLAUDE.md)
+3. [CONTRIBUTING.md](./CONTRIBUTING.md)
+4. [`.project-stack`](./.project-stack)
+
+Project conventions, testing requirements, security rules, and branch/PR expectations are documented there.
+
+## Testing
+
+The repository includes automated checks for:
+
+- PHP unit tests
+- WordPress Coding Standards
+- JavaScript/TypeScript tooling
+- Playwright end-to-end flows
+- Lighthouse checks
+- Secret scanning
+- Dependency vulnerability scanning
+
+Use the project's existing CI configuration as the source of truth for the commands and environment required in each check.
+
+## Architecture
+
+The active project stack is:
+
+```json
+{
+  "primary": "wordpress-classic"
+}
 ```
 
-Or via the curl installer:
+The theme follows the traditional WordPress model:
 
-```bash
-curl -sfL https://ardentops.dev/install.sh | bash -s -- --from-npm
-```
+- **Theme:** presentation, templates, hooks, and frontend assets
+- **Plugins:** application/domain functionality that should not be coupled to the theme
+- **WordPress core:** external runtime, not stored or modified here
+- **Secrets:** managed outside the repository according to the project's operational rules
 
----
+## Documentation
 
-## Quick start
-
-### New project (creates GitHub repo + bootstraps)
-
-```bash
-ardentops new-project
-# or skip prompts:
-ardentops new-project --name my-app --type nextjs
-```
-
-### Retrofit an existing project
-
-```bash
-ardentops bootstrap --retrofit /path/to/existing-project
-```
-
-### Detect what stack a project is using
-
-```bash
-ardentops detect-stack
-ardentops detect-stack --retrofit /path/to/project --yes
-```
-
----
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `new-project`        | Compose a new project from stack adapter templates + UAEF guardrails and create GitHub repo |
-| `bootstrap`          | Apply UAEF guardrails to an existing project                                                |
-| `detect-stack`       | Detect project stack by scanning adapter signatures                                         |
-| `protect`            | Apply GitHub branch protection rules                                                        |
-| `stack init`         | Interactive multi-select to create `.project-stack`                                         |
-| `stack add <id>`     | Add an adapter to the composition                                                           |
-| `stack remove <id>`  | Remove an adapter from the composition                                                      |
-| `stack list`         | Show current adapter composition                                                            |
-| `stack migrate`      | Convert old `.project-type` to `.project-stack`                                             |
-| `service add <name>` | Add a composable service (backend, BaaS, CMS)                                               |
-| `service list`       | List available composable services                                                          |
-| `list-adapters`      | List all 13 stack adapters with descriptions                                                |
-| `self-update`        | Pull latest framework version and re-link CLI                                               |
-
-Run `ardentops <command> --help` for flags.
-
----
-
-## Stack adapters
-
-17 adapters across four CI categories:
-
-**PHP:** `wordpress-classic` · `wordpress-bedrock` · `wordpress-fse` · `laravel`
-
-**JavaScript (Frontend):** `nextjs` · `nuxtjs` · `sveltekit` · `angular` · `static` · `shopify-liquid` · `shopify-hydrogen`
-
-**JavaScript (Backend):** `nestjs` · `node-api`
-
-**Python:** `python-fastapi`
-
-**Monorepo/Orchestration:** `turborepo` · `aws-lambda`
-
-**Other:** `generic` (Tier 3 fallback — Tier 1 enforcement only)
-
----
-
-## Prerequisites
-
-| Tool              | Version | Purpose                           |
-| ----------------- | ------- | --------------------------------- |
-| Node.js           | ≥ 20    | CLI runtime                       |
-| Docker Desktop    | Latest  | Lando container host              |
-| Lando             | Latest  | Local dev environment             |
-| GitHub CLI (`gh`) | Latest  | Repo creation + branch protection |
-| Doppler CLI       | Latest  | Secrets distribution              |
-
----
-
-## Architecture decisions
-
-The framework's design rationale lives in `docs/decisions/`:
-
-- **ADR-001** — UAEF core toolchain adoption
-- **ADR-002** — Three-tier adapter architecture
-- **ADR-003** — Composable adapter system (`.project-stack`)
-
----
+Useful project documentation lives under [`docs/`](./docs), including environment, testing, branch-protection, secret management, and operational guidance.
 
 ## License
 
